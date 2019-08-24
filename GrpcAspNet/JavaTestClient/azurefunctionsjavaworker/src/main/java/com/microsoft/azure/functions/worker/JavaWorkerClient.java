@@ -19,19 +19,17 @@ public class JavaWorkerClient implements AutoCloseable {
         System.out.println(args[1]);
         ManagedChannelBuilder<?> chanBuilder = ManagedChannelBuilder.forAddress(args[0], Integer.parseInt(args[1])).usePlaintext(true);
         this.channel = chanBuilder.build();
-        this.peer = new AtomicReference<>(null);
+        this.peer = new StreamingMessagePeer();
     }
 
     public Future<Void> listen(String workerId, String requestId) {
-        this.peer.set(new StreamingMessagePeer());
-        this.peer.get().send(workerId);
-        return this.peer.get().getListeningTask();
+        this.peer.send(workerId);
+        return this.peer.getListeningTask();
     }
 
     @Override
     public void close() throws Exception {
-        this.peer.get().close();
-        this.peer.set(null);
+        this.peer.close();
         this.channel.shutdownNow();
         this.channel.awaitTermination(15, TimeUnit.SECONDS);
     }
@@ -40,7 +38,6 @@ public class JavaWorkerClient implements AutoCloseable {
         StreamingMessagePeer() {
             this.task = new CompletableFuture<>();
             this.threadpool = ForkJoinPool.commonPool();
-
             this.observer = FunctionRpcGrpc.newStub(JavaWorkerClient.this.channel).eventStream(this);
         }
 
@@ -58,11 +55,12 @@ public class JavaWorkerClient implements AutoCloseable {
          */
         @Override
         public void onNext(StreamingMessage message) {
+            String invocationId = message.getInvocationRequest().getInvocationId();
+
            this.threadpool.submit(() -> {
                 StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
                 InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
-                invocationResponse.setInvocationId(message.getInvocationRequest().getInvocationId());
-
+                invocationResponse.setInvocationId(invocationId);
                 invocationResponse.setResult("Success");
                 TypedData.Builder typeData = TypedData.newBuilder();
                 RpcHttp.Builder http = RpcHttp.newBuilder();
@@ -103,5 +101,5 @@ public class JavaWorkerClient implements AutoCloseable {
     }
 
     private final ManagedChannel channel;
-    private final AtomicReference<StreamingMessagePeer> peer;
+    private final StreamingMessagePeer peer;
 }
