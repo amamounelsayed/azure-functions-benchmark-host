@@ -25,6 +25,13 @@ namespace TestGrpc.Messages {
         __Marshaller_AzureFunctionsRpcMessages_StreamingMessage,
         __Marshaller_AzureFunctionsRpcMessages_StreamingMessage);
 
+    static readonly grpc::Method<global::TestGrpc.Messages.StreamingMessage, global::TestGrpc.Messages.StreamingMessage> __Method_GetFeature = new grpc::Method<global::TestGrpc.Messages.StreamingMessage, global::TestGrpc.Messages.StreamingMessage>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetFeature",
+        __Marshaller_AzureFunctionsRpcMessages_StreamingMessage,
+        __Marshaller_AzureFunctionsRpcMessages_StreamingMessage);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -35,6 +42,11 @@ namespace TestGrpc.Messages {
     public abstract partial class FunctionRpcBase
     {
       public virtual global::System.Threading.Tasks.Task EventStream(grpc::IAsyncStreamReader<global::TestGrpc.Messages.StreamingMessage> requestStream, grpc::IServerStreamWriter<global::TestGrpc.Messages.StreamingMessage> responseStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      public virtual global::System.Threading.Tasks.Task<global::TestGrpc.Messages.StreamingMessage> GetFeature(global::TestGrpc.Messages.StreamingMessage request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -72,6 +84,22 @@ namespace TestGrpc.Messages {
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_EventStream, null, options);
       }
+      public virtual global::TestGrpc.Messages.StreamingMessage GetFeature(global::TestGrpc.Messages.StreamingMessage request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetFeature(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::TestGrpc.Messages.StreamingMessage GetFeature(global::TestGrpc.Messages.StreamingMessage request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetFeature, null, options, request);
+      }
+      public virtual grpc::AsyncUnaryCall<global::TestGrpc.Messages.StreamingMessage> GetFeatureAsync(global::TestGrpc.Messages.StreamingMessage request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetFeatureAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual grpc::AsyncUnaryCall<global::TestGrpc.Messages.StreamingMessage> GetFeatureAsync(global::TestGrpc.Messages.StreamingMessage request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetFeature, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override FunctionRpcClient NewInstance(ClientBaseConfiguration configuration)
       {
@@ -84,7 +112,8 @@ namespace TestGrpc.Messages {
     public static grpc::ServerServiceDefinition BindService(FunctionRpcBase serviceImpl)
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
-          .AddMethod(__Method_EventStream, serviceImpl.EventStream).Build();
+          .AddMethod(__Method_EventStream, serviceImpl.EventStream)
+          .AddMethod(__Method_GetFeature, serviceImpl.GetFeature).Build();
     }
 
     /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
@@ -94,6 +123,7 @@ namespace TestGrpc.Messages {
     public static void BindService(grpc::ServiceBinderBase serviceBinder, FunctionRpcBase serviceImpl)
     {
       serviceBinder.AddMethod(__Method_EventStream, serviceImpl.EventStream);
+      serviceBinder.AddMethod(__Method_GetFeature, serviceImpl.GetFeature);
     }
 
   }

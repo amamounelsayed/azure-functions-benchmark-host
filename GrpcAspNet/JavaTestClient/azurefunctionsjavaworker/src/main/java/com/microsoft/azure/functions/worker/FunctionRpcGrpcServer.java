@@ -71,6 +71,27 @@ public class FunctionRpcGrpcServer {
         }
 
         @Override
+        public void getFeature(StreamingMessage message, StreamObserver<StreamingMessage> responseObserver) {
+            String invocationId = message.getInvocationRequest().getInvocationId();
+            StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
+            InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
+            invocationResponse.setInvocationId(invocationId);
+            invocationResponse.setResult("Success");
+            TypedData.Builder typeData = TypedData.newBuilder();
+            RpcHttp.Builder http = RpcHttp.newBuilder();
+            TypedData.Builder body = TypedData.newBuilder();
+            body.setString("Hello World!!");
+            http.setBody(body);
+            http.setStatusCode("OK");
+            typeData.setHttp(http);
+            invocationResponse.setReturnValue(typeData);
+
+            messageBuilder.setInvocationResponse(invocationResponse);
+            responseObserver.onNext(messageBuilder.build());
+            responseObserver.onCompleted();
+        }
+
+        @Override
         public StreamObserver<StreamingMessage> eventStream(StreamObserver<StreamingMessage> responseObserver) {
             return new StreamObserver<StreamingMessage>() {
                 @Override

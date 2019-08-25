@@ -151,7 +151,7 @@ namespace GrpcAspNet
             };
 
 
-            client.RouteChat(msg);
+            client.GetFeature(msg);
 
 
           //  SendStreamingMessage(new StreamingMessage
@@ -242,32 +242,25 @@ namespace GrpcAspNet
             /// <summary>
             /// Blocking unary call example.  Calls GetFeature and prints the response.
             /// </summary>
-            /*public void GetFeature(int lat, int lon)
+            public void GetFeature(StreamingMessage msg)
             {
                 try
                 {
-                    Log("*** GetFeature: lat={0} lon={1}", lat, lon);
-
-                    Point request = new Point { Latitude = lat, Longitude = lon };
-
-                    Feature feature = client.GetFeature(request);
-                    if (feature.Exists())
+                    StreamingMessage currentMessage = client.GetFeature(msg);
+                    if (currentMessage.InvocationResponse != null)
                     {
-                        Log("Found feature called \"{0}\" at {1}, {2}",
-                            feature.Name, feature.Location.GetLatitude(), feature.Location.GetLongitude());
+                        workerChannel.InvokeResponse(currentMessage.InvocationResponse);
                     }
                     else
                     {
-                        Log("Found no feature at {0}, {1}",
-                            feature.Location.GetLatitude(), feature.Location.GetLongitude());
+                        workerChannel._eventManager.Publish(new InboundEvent(workerChannel._workerId, currentMessage));
                     }
                 }
                 catch (RpcException e)
                 {
-                    Log("RPC failed " + e);
                     throw;
                 }
-            }*/
+            }
 
 
 
