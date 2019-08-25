@@ -18,6 +18,7 @@ using GrpcMessages.Events;
 using MsgType = TestGrpc.Messages.StreamingMessage.ContentOneofCase;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Grpc.Core;
 
 namespace GrpcAspNet
 {
@@ -40,6 +41,8 @@ namespace GrpcAspNet
         private string _serverUri;
 
         private static object _functionLoadResponseLock = new object();
+        private TestGrpc.Messages.FunctionRpc.FunctionRpcClient client;
+
 
         internal LanguageWorkerChannel()
         {
@@ -112,6 +115,9 @@ namespace GrpcAspNet
                 _process = new Process();
                 _process.StartInfo = startInfo;
                 _process.Start();
+
+                Channel channel = new Channel("127.0.0.1:49150", ChannelCredentials.Insecure);
+                client = new FunctionRpc.FunctionRpcClient(channel);
             }
             catch (Exception ex)
             {
@@ -200,11 +206,42 @@ namespace GrpcAspNet
             }
         }
 
-        private void SendStreamingMessage(StreamingMessage msg)
+        private async void SendStreamingMessage(StreamingMessage msg)
         {
             _logger.LogInformation($"SendStreamingMessage...on threadId: {Thread.CurrentThread.ManagedThreadId}");
 
-            _eventManager.Publish(new OutboundEvent(_workerId, msg));
+            //_eventManager.Publish(new OutboundEvent(_workerId, msg));
+
+            try
+            {
+                using (var call = client.EventStream(deadline: DateTime.UtcNow.AddSeconds(20)))
+                {
+                    var responseReaderTask = Task.Run(async () =>
+                    {
+                        while (await call.ResponseStream.MoveNext())
+                        {
+                            var currentMessage = call.ResponseStream.Current;                 
+
+                            if (currentMessage.InvocationResponse != null)
+                            {
+                                InvokeResponse(currentMessage.InvocationResponse);
+                            }
+                            else
+                            {
+                                _eventManager.Publish(new InboundEvent(_workerId, currentMessage));
+                            }
+                        }
+                    });
+                    await call.RequestStream.WriteAsync(msg);
+              //      await call.RequestStream.CompleteAsync();
+                    await responseReaderTask;
+                }
+            }
+            catch (Exception ex)
+            {
+
+                var a = ex.Message;
+            }
         }
 
         public void Dispose()

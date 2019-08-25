@@ -75,7 +75,6 @@ public class FunctionRpcGrpcServer {
             return new StreamObserver<StreamingMessage>() {
                 @Override
                 public void onNext(StreamingMessage message) {
-                    logger.addHandler(new ConsoleHandler());
                     logger.warning("a7a");
                     logger.info("a7a2");
                     String invocationId = message.getInvocationRequest().getInvocationId();

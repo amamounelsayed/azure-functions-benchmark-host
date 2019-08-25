@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <NameOfLastUsedPublishProfile>pgopaGrpcAspNet - Web Deploy</NameOfLastUsedPublishProfile>
+    <NameOfLastUsedPublishProfile>GrpcAspNet20190823010008-client-server - Web Deploy</NameOfLastUsedPublishProfile>
     <ActiveDebugProfile>GrpcAspNet</ActiveDebugProfile>
     <Controller_SelectedScaffolderID>ApiControllerWithActionsScaffolder</Controller_SelectedScaffolderID>
     <Controller_SelectedScaffolderCategoryPath>root/Controller</Controller_SelectedScaffolderCategoryPath>
