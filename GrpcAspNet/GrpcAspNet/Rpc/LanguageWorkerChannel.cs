@@ -242,11 +242,11 @@ namespace GrpcAspNet
             /// <summary>
             /// Blocking unary call example.  Calls GetFeature and prints the response.
             /// </summary>
-            public void GetFeature(StreamingMessage msg)
+            public async void GetFeature(StreamingMessage msg)
             {
                 try
                 {
-                    StreamingMessage currentMessage = client.GetFeature(msg);
+                    StreamingMessage currentMessage = await client.GetFeatureAsync(msg);
                     if (currentMessage.InvocationResponse != null)
                     {
                         workerChannel.InvokeResponse(currentMessage.InvocationResponse);

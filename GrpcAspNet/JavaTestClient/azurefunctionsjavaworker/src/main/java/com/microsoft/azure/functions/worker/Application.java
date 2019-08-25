@@ -27,7 +27,6 @@ public final class Application {
             System.exit(-1);
         }
 
-//        FunctionRpcGrpcClient client = new FunctionRpcGrpcClient(app.getHost(), app.getPort());
         try (JavaWorkerClient client = new JavaWorkerClient(args_array)) {
 
             final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
