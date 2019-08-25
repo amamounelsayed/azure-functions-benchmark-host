@@ -1,7 +1,6 @@
 package com.microsoft.azure.functions.worker;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 
 import io.grpc.*;
@@ -19,36 +18,34 @@ public class JavaWorkerClient implements AutoCloseable {
         System.out.println(args[1]);
         ManagedChannelBuilder<?> chanBuilder = ManagedChannelBuilder.forAddress(args[0], Integer.parseInt(args[1])).usePlaintext(true);
         this.channel = chanBuilder.build();
-        this.peer = new AtomicReference<>(null);
+        this.responseObserver = new ResponseObserverImpl();
     }
 
     public Future<Void> listen(String workerId, String requestId) {
-        this.peer.set(new StreamingMessagePeer());
-        this.peer.get().send(workerId);
-        return this.peer.get().getListeningTask();
+        this.responseObserver.send(workerId);
+        return this.responseObserver.getListeningTask();
     }
 
     @Override
     public void close() throws Exception {
-        this.peer.get().close();
-        this.peer.set(null);
+        this.responseObserver.close();
         this.channel.shutdownNow();
         this.channel.awaitTermination(15, TimeUnit.SECONDS);
     }
 
-    private class StreamingMessagePeer implements StreamObserver<StreamingMessage>, AutoCloseable {
-        StreamingMessagePeer() {
+    private class ResponseObserverImpl implements StreamObserver<StreamingMessage>, AutoCloseable {
+        ResponseObserverImpl() {
             this.task = new CompletableFuture<>();
-            this.threadpool = ForkJoinPool.commonPool();
+            //this.threadpool = ForkJoinPool.commonPool();
 
-            this.observer = FunctionRpcGrpc.newStub(JavaWorkerClient.this.channel).eventStream(this);
+            this.requestObserver = FunctionRpcGrpc.newStub(JavaWorkerClient.this.channel).eventStream(this);
         }
 
         @Override
         public synchronized void close() throws Exception {
-            this.threadpool.shutdown();
-            this.threadpool.awaitTermination(15, TimeUnit.SECONDS);
-            this.observer.onCompleted();
+         //   this.threadpool.shutdown();
+         //   this.threadpool.awaitTermination(15, TimeUnit.SECONDS);
+            this.requestObserver.onCompleted();
         }
 
 
@@ -58,24 +55,24 @@ public class JavaWorkerClient implements AutoCloseable {
          */
         @Override
         public void onNext(StreamingMessage message) {
-           this.threadpool.submit(() -> {
-                StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
-                InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
-                invocationResponse.setInvocationId(message.getInvocationRequest().getInvocationId());
+          // this.threadpool.submit(() -> {
+            StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
+            InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
+            invocationResponse.setInvocationId(message.getInvocationRequest().getInvocationId());
 
-                invocationResponse.setResult("Success");
-                TypedData.Builder typeData = TypedData.newBuilder();
-                RpcHttp.Builder http = RpcHttp.newBuilder();
-                TypedData.Builder body = TypedData.newBuilder();
-                body.setString("Hello World!!");
-                http.setBody(body);
-                http.setStatusCode("OK");
-                typeData.setHttp(http);
-                invocationResponse.setReturnValue(typeData);
+            invocationResponse.setResult("Success");
+            TypedData.Builder typeData = TypedData.newBuilder();
+            RpcHttp.Builder http = RpcHttp.newBuilder();
+            TypedData.Builder body = TypedData.newBuilder();
+            body.setString("Hello World!!");
+            http.setBody(body);
+            http.setStatusCode("OK");
+            typeData.setHttp(http);
+            invocationResponse.setReturnValue(typeData);
 
-                messageBuilder.setInvocationResponse(invocationResponse);
-                this.observer.onNext(messageBuilder.build());
-           });
+            messageBuilder.setInvocationResponse(invocationResponse);
+            this.requestObserver.onNext(messageBuilder.build());
+          // });
         }
 
         private synchronized void send(String message) {
@@ -85,7 +82,7 @@ public class JavaWorkerClient implements AutoCloseable {
             startStream.setWorkerId(message);
             messageBuilder.setStartStream(startStream);
             System.out.println("sent:" + messageBuilder.build());
-            this.observer.onNext(messageBuilder.build());
+            this.requestObserver.onNext(messageBuilder.build());
         }
 
         @Override
@@ -98,10 +95,10 @@ public class JavaWorkerClient implements AutoCloseable {
 
 
         private CompletableFuture<Void> task;
-        private ExecutorService threadpool;
-        private StreamObserver<StreamingMessage> observer;
+     //   private ExecutorService threadpool;
+        private StreamObserver<StreamingMessage> requestObserver;
     }
 
     private final ManagedChannel channel;
-    private final AtomicReference<StreamingMessagePeer> peer;
+    private final ResponseObserverImpl responseObserver;
 }
