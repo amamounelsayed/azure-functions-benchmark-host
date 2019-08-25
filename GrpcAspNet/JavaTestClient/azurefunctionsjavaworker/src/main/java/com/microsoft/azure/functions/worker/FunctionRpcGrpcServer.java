@@ -75,27 +75,23 @@ public class FunctionRpcGrpcServer {
             return new StreamObserver<StreamingMessage>() {
                 @Override
                 public void onNext(StreamingMessage message) {
-                    logger.warning("a7a");
-                    logger.info("a7a2");
                     String invocationId = message.getInvocationRequest().getInvocationId();
-                    threadpool.submit(() -> {
-                        StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
-                        InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
-                        invocationResponse.setInvocationId(invocationId);
-                        invocationResponse.setResult("Success");
-                        TypedData.Builder typeData = TypedData.newBuilder();
-                        RpcHttp.Builder http = RpcHttp.newBuilder();
-                        TypedData.Builder body = TypedData.newBuilder();
-                        body.setString("Hello World!!");
-                        http.setBody(body);
-                        http.setStatusCode("OK");
-                        typeData.setHttp(http);
-                        invocationResponse.setReturnValue(typeData);
+                    StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
+                    InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
+                    invocationResponse.setInvocationId(invocationId);
+                    invocationResponse.setResult("Success");
+                    TypedData.Builder typeData = TypedData.newBuilder();
+                    RpcHttp.Builder http = RpcHttp.newBuilder();
+                    TypedData.Builder body = TypedData.newBuilder();
+                    body.setString("Hello World!!");
+                    http.setBody(body);
+                    http.setStatusCode("OK");
+                    typeData.setHttp(http);
+                    invocationResponse.setReturnValue(typeData);
 
-                        messageBuilder.setInvocationResponse(invocationResponse);
-                        responseObserver.onNext(messageBuilder.build());
-
-                    });
+                    messageBuilder.setInvocationResponse(invocationResponse);
+                    responseObserver.onNext(messageBuilder.build());
+                    responseObserver.onCompleted();
                 }
 
                 @Override

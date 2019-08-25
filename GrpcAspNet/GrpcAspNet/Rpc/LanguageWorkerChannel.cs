@@ -41,7 +41,7 @@ namespace GrpcAspNet
         private string _serverUri;
 
         private static object _functionLoadResponseLock = new object();
-        private TestGrpc.Messages.FunctionRpc.FunctionRpcClient client;
+        private RouteGuideClient client;
 
 
         internal LanguageWorkerChannel()
@@ -117,7 +117,7 @@ namespace GrpcAspNet
                 _process.Start();
 
                 Channel channel = new Channel("127.0.0.1:49150", ChannelCredentials.Insecure);
-                client = new FunctionRpc.FunctionRpcClient(channel);
+                client = new RouteGuideClient(new FunctionRpc.FunctionRpcClient(channel), this);
             }
             catch (Exception ex)
             {
@@ -144,10 +144,20 @@ namespace GrpcAspNet
                 Data = request.ToRpc()
             });
             _executingInvocations.TryAdd(invocationRequest.InvocationId, context);
-            SendStreamingMessage(new StreamingMessage
+
+            StreamingMessage msg = new StreamingMessage
             {
                 InvocationRequest = invocationRequest
-            });
+            };
+
+
+            client.RouteChat(msg);
+
+
+          //  SendStreamingMessage(new StreamingMessage
+          //  {
+          //      InvocationRequest = invocationRequest
+          //  });
         }
 
         internal RpcHttp GetRpcHttp()
@@ -210,43 +220,97 @@ namespace GrpcAspNet
         {
             _logger.LogInformation($"SendStreamingMessage...on threadId: {Thread.CurrentThread.ManagedThreadId}");
 
-            //_eventManager.Publish(new OutboundEvent(_workerId, msg));
-
-            try
-            {
-                using (var call = client.EventStream(deadline: DateTime.UtcNow.AddSeconds(20)))
-                {
-                    var responseReaderTask = Task.Run(async () =>
-                    {
-                        while (await call.ResponseStream.MoveNext())
-                        {
-                            var currentMessage = call.ResponseStream.Current;                 
-
-                            if (currentMessage.InvocationResponse != null)
-                            {
-                                InvokeResponse(currentMessage.InvocationResponse);
-                            }
-                            else
-                            {
-                                _eventManager.Publish(new InboundEvent(_workerId, currentMessage));
-                            }
-                        }
-                    });
-                    await call.RequestStream.WriteAsync(msg);
-              //      await call.RequestStream.CompleteAsync();
-                    await responseReaderTask;
-                }
-            }
-            catch (Exception ex)
-            {
-
-                var a = ex.Message;
-            }
+            _eventManager.Publish(new OutboundEvent(_workerId, msg));
         }
 
         public void Dispose()
         {
             _process.Dispose();
         }
+
+        public class RouteGuideClient
+        {
+            readonly FunctionRpc.FunctionRpcClient client;
+            LanguageWorkerChannel workerChannel;
+
+            public RouteGuideClient(FunctionRpc.FunctionRpcClient client, LanguageWorkerChannel workerChannel)
+            {
+                this.client = client;
+                this.workerChannel = workerChannel;
+            }
+
+            /// <summary>
+            /// Blocking unary call example.  Calls GetFeature and prints the response.
+            /// </summary>
+            /*public void GetFeature(int lat, int lon)
+            {
+                try
+                {
+                    Log("*** GetFeature: lat={0} lon={1}", lat, lon);
+
+                    Point request = new Point { Latitude = lat, Longitude = lon };
+
+                    Feature feature = client.GetFeature(request);
+                    if (feature.Exists())
+                    {
+                        Log("Found feature called \"{0}\" at {1}, {2}",
+                            feature.Name, feature.Location.GetLatitude(), feature.Location.GetLongitude());
+                    }
+                    else
+                    {
+                        Log("Found no feature at {0}, {1}",
+                            feature.Location.GetLatitude(), feature.Location.GetLongitude());
+                    }
+                }
+                catch (RpcException e)
+                {
+                    Log("RPC failed " + e);
+                    throw;
+                }
+            }*/
+
+
+
+            /// <summary>
+            /// Bi-directional streaming example. Send some chat messages, and print any
+            /// chat messages that are sent from the server.
+            /// </summary>
+            public async Task RouteChat(StreamingMessage msg)
+            {
+                try
+                {
+                    using (
+                        var call = client.EventStream())
+                    {
+                        var responseReaderTask = Task.Run(async () =>
+                        {
+                            while (await call.ResponseStream.MoveNext())
+                            { 
+                                var currentMessage = call.ResponseStream.Current;
+
+                                if (currentMessage.InvocationResponse != null)
+                                {
+                                    workerChannel.InvokeResponse(currentMessage.InvocationResponse);
+                                }
+                                else
+                                {
+                                    workerChannel._eventManager.Publish(new InboundEvent(workerChannel._workerId, currentMessage));
+                                }
+                            }
+                        });
+
+                        await call.RequestStream.WriteAsync(msg);
+
+                        await call.RequestStream.CompleteAsync();
+                        await responseReaderTask;
+                    }
+                }
+                catch (RpcException e)
+                {
+                    var A = 0L;
+                }
+            }
+        }
     }
 }
+
