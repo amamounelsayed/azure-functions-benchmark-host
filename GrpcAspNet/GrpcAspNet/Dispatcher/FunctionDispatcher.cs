@@ -19,7 +19,7 @@ namespace GrpcAspNet
 
         public void AddWorkerChannel(LanguageWorkerChannel workerChannel)
         {
-            _logger.LogInformation($"Adding LanguageWorkerChannel workerId:{workerChannel.Id}");
+      //      _logger.LogInformation($"Adding LanguageWorkerChannel workerId:{workerChannel.Id}");
             _workerChannel = workerChannel;
         }
     }

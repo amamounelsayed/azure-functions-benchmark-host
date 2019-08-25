@@ -1,7 +1,11 @@
 package com.microsoft.azure.functions.worker;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.logging.Level;
 
 
 import io.grpc.*;
@@ -51,7 +55,7 @@ public class JavaWorkerClient implements AutoCloseable {
             this.observer.onCompleted();
         }
 
-
+        DateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         /**
          * Handles the request. Grpc will not accept the next request until you exit this method.
          * @param message The incoming Grpc generic message.
@@ -59,9 +63,14 @@ public class JavaWorkerClient implements AutoCloseable {
         @Override
         public void onNext(StreamingMessage message) {
            this.threadpool.submit(() -> {
+               String invId = message.getInvocationRequest().getInvocationId();
+
+               Date date = new Date();
+               System.out.println("opa client start;; " + invId + ";;" + sdf.format(date));
+
                 StreamingMessage.Builder messageBuilder = StreamingMessage.newBuilder();
                 InvocationResponse.Builder invocationResponse = InvocationResponse.newBuilder();
-                invocationResponse.setInvocationId(message.getInvocationRequest().getInvocationId());
+                invocationResponse.setInvocationId(invId);
 
                 invocationResponse.setResult("Success");
                 TypedData.Builder typeData = TypedData.newBuilder();
@@ -75,6 +84,9 @@ public class JavaWorkerClient implements AutoCloseable {
 
                 messageBuilder.setInvocationResponse(invocationResponse);
                 this.observer.onNext(messageBuilder.build());
+               Date date2 = new Date();
+               System.out.println("opa client end;; " + invId + ";;" + sdf.format(date2));
+
            });
         }
 

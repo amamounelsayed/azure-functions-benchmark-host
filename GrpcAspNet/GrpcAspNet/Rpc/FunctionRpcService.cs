@@ -64,9 +64,12 @@ namespace GrpcAspNet
                                 {
                                     await _syncSemaphore.WaitAsync();
                                     // WriteAsync only allows one pending write at a time
-                                    _logger.LogInformation($" writeasync invokeId: {evt.Message.InvocationRequest.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
+                                    //   _logger.LogInformation($" writeasync invokeId: {evt.Message.InvocationRequest.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
+                                    DateTime dateValue_1 = DateTime.Now;
+                                    _logger.LogInformation($"opa write before..invokeId;; {evt.Message.InvocationRequest.InvocationId}" + ";;" +dateValue_1.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
                                     await responseStream.WriteAsync(evt.Message);
-                                    _logger.LogInformation($" write done..invokeId: {evt.Message.InvocationRequest.InvocationId}");
+                                    DateTime dateValue_2 = DateTime.Now;
+                                    _logger.LogInformation($"opa write done..invokeId;; {evt.Message.InvocationRequest.InvocationId}" + ";;" + dateValue_2.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
                                     _eventManager.Publish(new RpcWriteEvent(workerId, evt.Message.InvocationRequest.InvocationId));
                                 }
                                 finally
@@ -77,6 +80,15 @@ namespace GrpcAspNet
                     }
                     do
                     {
+                        try
+                        {
+                            DateTime dateValue_3 = DateTime.Now;
+                            _logger.LogInformation($"opa request back..invokeId;; {requestStream.Current.InvocationResponse.InvocationId}" + ";;" + dateValue_3.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
+                        }
+                        catch (Exception ex)
+                        {
+                            var a = 5;
+                        }
                         _eventManager.Publish(new InboundEvent(workerId, requestStream.Current));
                     }
                     while (await messageAvailable());

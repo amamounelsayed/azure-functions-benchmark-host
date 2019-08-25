@@ -121,7 +121,7 @@ namespace GrpcAspNet
 
         internal void SendInvocationRequest(ScriptInvocationContext context)
         {
-            _logger.LogInformation($"sending invocation request id: {context.InvocationId}");
+         //   _logger.LogInformation($"sending invocation request id: {context.InvocationId}");
             
             InvocationRequest invocationRequest = new InvocationRequest()
             {
@@ -157,7 +157,7 @@ namespace GrpcAspNet
         internal void WriteInvocationRequest(RpcWriteContext context)
         {
             
-            _logger.LogInformation($"WriteInvocationRequest id: {context.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
+         //   _logger.LogInformation($"WriteInvocationRequest id: {context.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
 
             _eventSubscriptions.Add(_writeEvents.Where(msg => msg.InvocationId == context.InvocationId)
                    .ObserveOn(NewThreadScheduler.Default)
@@ -178,7 +178,7 @@ namespace GrpcAspNet
 
         internal void InvokeResponse(InvocationResponse invokeResponse)
         {
-            _logger.LogInformation($"InvocationResponse received id: {invokeResponse.InvocationId}");
+         //   _logger.LogInformation($"InvocationResponse received id: {invokeResponse.InvocationId}");
 
             if (_executingInvocations.TryRemove(invokeResponse.InvocationId, out ScriptInvocationContext context))
             {
@@ -192,7 +192,7 @@ namespace GrpcAspNet
 
         internal void RpcWriteEventDone(RpcWriteEvent writeEvent)
         {
-            _logger.LogInformation($"RpcWriteEvent Done  id: {writeEvent.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
+         //   _logger.LogInformation($"RpcWriteEvent Done  id: {writeEvent.InvocationId} on threadId: {Thread.CurrentThread.ManagedThreadId}");
 
             if (_executingWrites.TryRemove(writeEvent.InvocationId, out RpcWriteContext context))
             {
@@ -202,7 +202,7 @@ namespace GrpcAspNet
 
         private void SendStreamingMessage(StreamingMessage msg)
         {
-            _logger.LogInformation($"SendStreamingMessage...on threadId: {Thread.CurrentThread.ManagedThreadId}");
+         //   _logger.LogInformation($"SendStreamingMessage...on threadId: {Thread.CurrentThread.ManagedThreadId}");
 
             _eventManager.Publish(new OutboundEvent(_workerId, msg));
         }
